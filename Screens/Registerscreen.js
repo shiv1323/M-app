@@ -1,211 +1,314 @@
-import 'react-native-gesture-handler';
-import { SafeAreaView, View, Text, TextInput, Image } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import STYLES from '../styles/index1';
-import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
-import { StatusBar } from 'expo-status-bar'
-import React, { useLayoutEffect, useState } from 'react'
-import { Input, Button } from 'react-native-elements'
-import { auth, } from '../firebase';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+
+import STYLES from "../styles/index1";
+import React, { useContext, useEffect, useLayoutEffect, useState } from "react";
+import { Input } from "react-native-elements";
+import { addUser, auth } from "../firebase";
+import colors from "../config/colors";
+import Icon from "../component/Icon";
+import { StyleSheet } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import Indicator from "../component/Indicator";
+import { AuthContext } from "../context/Message";
+
 const Registerscreen = ({ navigation }) => {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [imageUrl, setImageUrl] = useState("");
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerBackTitle: "Back to Login"
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
+  const [loading, setIsLoading] = useState(false);
+
+  const { permission } = useContext(AuthContext);
+
+  // selecting image
+  const selectImage = async () => {
+    setIsLoading(true);
+    if (permission) {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        base64: true,
+      });
+
+      if (!result.cancelled) {
+        let base64Img = `data:image/jpg;base64,${result.base64}`;
+
+        // Add your cloud name
+        let apiUrl = "https://api.cloudinary.com/v1_1/shiv1323/image/upload";
+
+        let data = {
+          file: base64Img,
+          upload_preset: "chat-app",
+        };
+
+        fetch(apiUrl, {
+          body: JSON.stringify(data),
+          headers: {
+            "content-type": "application/json",
+          },
+          method: "POST",
         })
-    }, [navigation])
-    const register = () => {
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(authUser => {
-                authUser.user.updateProfile({
-                    displayName: name,
-                    photoURL: imageUrl || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGEQjb_t0S5C4b2B01eMGWRSSXNLoJBKKXOQ&usqp=CAU",
-                })
-            })
-            .catch(error => alert(error.message))
-        alert('Register Successfully')
+          .then(async (r) => {
+            let responseData = await r.json();
+            setImageUrl(responseData.secure_url);
+            setIsLoading(false);
+          })
+          .catch((err) => setIsLoading(false));
+      }
     }
-    // const dispatch = useDispatch();
-    // const signUp = () => {
-    //     auth.signInWithRedirect(provider)
-    //         .then((user) => {
-    //             (login({
-    //                 displayName: user.displayName,
-    //                 email: user.email,
-    //                 photoURL: user.photoURL,
-    //                 emailVerified: user.emailVerified,
-    //             })
-    //             )
+  };
+  // if u one want to change image
+  const handlePress = () => {
+    if (!imageUrl) selectImage();
+    else {
+      Alert.alert("Delete", "Are you sure you want to delete this image?", [
+        { text: "Yes", onPress: () => setImageUrl(null) },
+        { text: "No" },
+      ]);
+    }
+  };
 
-    //         })
-    //         .catch(error => alert(error.message));
-    // }
-    return (
-        <SafeAreaView
-            style={{ paddingHorizontal: 20, flex: 1, backgroundColor: "#000" }}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', marginTop: 26.5 }}>
-                    <Text style={{ fontWeight: 'bold', fontSize: 22, color: "#fff" }}>
-                        FOX
-                    </Text>
-                    <Text
-                        style={{ fontWeight: 'bold', fontSize: 22, color: "#64beff" }}>
-                        HUB
-                    </Text>
-                </View>
-                <View style={{ marginTop: 13 }} >
-                    <Text style={{ fontSize: 27, fontWeight: 'bold', color: "#fff" }}>
-                        Welcome,
-                    </Text>
-                    <Text style={{ fontSize: 19, fontWeight: 'bold', color: "#a5a5a5" }}>
-                        Sign up to continue
-                    </Text>
-                </View>
-                <View style={{ marginTop: 20 }}>
-                    <View style={STYLES.inputContainer}>
-                        <Icon
-                            name="person-outline"
-                            color="#a5a5a5"
-                            size={20}
-                            style={STYLES.inputIcon}
-                        />
-                        <Input
-                            style={STYLES.input}
-                            placeholder="Full Name"
-                            autoFocus
-                            type='text'
-                            value={name}
-                            onChangeText={(text) => setName(text)}
-                        />
-                    </View>
-                    <View style={STYLES.inputContainer}>
-                        <Icon
-                            name="mail-outline"
-                            color="#a5a5a5"
-                            size={20}
-                            style={STYLES.inputIcon}
-                        />
-                        <Input
-                            placeholder='Enter your email'
-                            autoCapitalize='none'
-                            autoCompleteType='email'
-                            keyboardType='email-address'
-                            keyboardAppearance='dark'
-                            returnKeyType='next'
-                            returnKeyLabel='next'
-                            autoFocus
-                            style={STYLES.input}
-                            type="email"
-                            value={email}
-                            onChangeText={(text) => setEmail(text)}
-                        />
-                    </View>
-                    <View style={STYLES.inputContainer}>
-                        <Icon
-                            name="lock-outline"
-                            color="#a5a5a5"
-                            size={20}
-                            style={STYLES.inputIcon}
-                        />
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => null, // This will hide the back button
+    });
+  }, []);
+  const register = () => {
+    auth
+      .createUserWithEmailAndPassword(email, password)
+      .then((authUser) => {
+        authUser.user.updateProfile({
+          displayName: name,
+          photoURL:
+            imageUrl ||
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGEQjb_t0S5C4b2B01eMGWRSSXNLoJBKKXOQ&usqp=CAU",
+        });
+        addUser(name, authUser["user"].email, imageUrl, authUser["user"].uid)
+          .then(() => console.log("g"))
+          .catch((e) => console.log(e));
+      })
+      .catch((error) => console.log(error));
+    navigation.navigate("Home");
+  };
 
-                        <Input
-                            icon='key'
-                            placeholder='Enter your password'
-                            secureTextEntry
-                            autoCompleteType='password'
-                            autoCapitalize='none'
-                            keyboardAppearance='dark'
-                            returnKeyType='go'
-                            returnKeyLabel='go'
-                            type="password"
-                            value={password}
-                            style={STYLES.textInput}
-                            onChangeText={(text) => setPassword(text)}
-                        // onSubmitEditing={signIn}
-                        />
-                    </View>
-                    <View style={STYLES.inputContainer}>
-                        <Input
-                            placeholder="Profile Picture URL (optional)"
-                            autoFocus
-                            type='text'
-                            value={imageUrl}
-                            style={{ color: '#a5a5a5' }}
-                            onChangeText={(text) => setImageUrl(text)}
-                            onSubmitEditing={register}
-                        />
-                    </View>
-                    <View style={STYLES.btnPrimary}>
-                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }} onPress={register}>
-                            Sign Up
-                        </Text>
-                    </View>
-                    <View
-                        style={{
-                            marginVertical: 20,
-                            flexDirection: 'row',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}>
-                        <View style={STYLES.line}></View>
-                        <Text style={{ marginHorizontal: 5, fontWeight: 'bold', color: '#fff' }}>OR</Text>
-                        <View style={STYLES.line}></View>
-                    </View>
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                        }}>
-                        <View style={STYLES.btnSecondary}>
-                            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#fff' }}>
-                                Sign up with
-                            </Text>
-                            <Image
-                                style={STYLES.btnImage}
-                                source={require('../assets/1.png')}
-                            />
-                        </View>
-                        <View style={{ width: 10 }}></View>
-                        <View style={STYLES.btnSecondary}>
-                            <TouchableOpacity >
-                                <Text style={{ fontWeight: 'bold', marginLeft: 3, fontSize: 12, color: '#fff' }}
+  return (
+    <SafeAreaView
+      style={{
+        paddingHorizontal: 20,
+        flex: 1,
+        backgroundColor: colors.background,
+      }}
+    >
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <TouchableOpacity onPress={handlePress}>
+          <View style={styles.img__container}>
+            {imageUrl ? (
+              loading ? (
+                <Indicator />
+              ) : (
+                <Image
+                  source={{
+                    uri: imageUrl,
+                  }}
+                  style={{
+                    width: 100,
+                    height: 100,
+                    resizeMode: "cover",
+                    borderRadius: 10,
+                  }}
+                />
+              )
+            ) : (
+              <Image
+                source={{
+                  uri: "https://www.seiu1000.org/sites/main/files/main-images/camera_lense_0.jpeg",
+                }}
+                style={{
+                  width: 100,
+                  height: 100,
+                  resizeMode: "cover",
+                  borderRadius: 10,
+                }}
+              />
+            )}
 
-                                >
-                                    Continue with Google
-                                </Text>
-                            </TouchableOpacity>
+            <View style={styles.uploadBtnContainer}>
+              <Icon
+                name="camera"
+                size={30}
+                color={colors.dogerBlueBackground}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
 
-                            <Image
-                                style={STYLES.btnImage}
-                                source={require('../assets/2.png')}
-                            />
-                        </View>
-                    </View>
-                </View>
+        <View style={{ marginTop: 20 }}>
+          <View style={STYLES.inputContainer}>
+            <Icon
+              name="person-outline"
+              color={colors.lightgrey}
+              size={20}
+              style={STYLES.inputIcon}
+            />
+            <Input
+              style={STYLES.input}
+              placeholder="Full Name"
+              autoFocus
+              type="text"
+              value={name}
+              onChangeText={(text) => setName(text)}
+            />
+          </View>
+          <View style={STYLES.inputContainer}>
+            <Icon
+              name="mail"
+              color={colors.lightgrey}
+              size={20}
+              style={STYLES.inputIcon}
+            />
+            <Input
+              placeholder="Enter your email"
+              autoCapitalize="none"
+              autoCompleteType="email"
+              keyboardType="email-address"
+              keyboardAppearance="dark"
+              returnKeyType="next"
+              returnKeyLabel="next"
+              autoFocus
+              style={STYLES.input}
+              type="email"
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+            />
+          </View>
+          <View style={STYLES.inputContainer}>
+            <Icon
+              name="lock-closed-outline"
+              color={colors.lightgrey}
+              size={20}
+              style={STYLES.inputIcon}
+            />
 
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'flex-end',
-                        justifyContent: 'center',
-                        marginTop: 40,
-                        marginBottom: 20,
-                    }}>
-                    <Text style={{ color: "#a5a5a5", fontWeight: 'bold' }}>
-                        Already have an account ?
-                    </Text>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Text style={{ color: "#ff2d5f", fontWeight: 'bold' }}>
-                            Sign in
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+            <Input
+              icon="key"
+              placeholder="Enter your password"
+              secureTextEntry
+              autoCompleteType="password"
+              autoCapitalize="none"
+              keyboardAppearance="dark"
+              returnKeyType="go"
+              returnKeyLabel="go"
+              type="password"
+              value={password}
+              style={STYLES.textInput}
+              onChangeText={(text) => setPassword(text)}
+              // onSubmitEditing={signIn}
+            />
+          </View>
+          <TouchableOpacity onPress={register}>
+            <View style={STYLES.btnPrimary}>
+              <Text
+                style={{
+                  color: colors.white,
+                  fontWeight: "bold",
+                  fontSize: 18,
+                }}
+              >
+                Sign Up
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <View
+            style={{
+              marginVertical: 20,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View style={STYLES.line}></View>
+            <Text
+              style={{
+                marginHorizontal: 5,
+                fontWeight: "bold",
+                color: colors.white,
+              }}
+            >
+              OR
+            </Text>
+            <View style={STYLES.line}></View>
+          </View>
+          <TouchableOpacity>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={STYLES.btnSecondary}>
+                <Image
+                  style={STYLES.btnImage}
+                  source={require("../assets/2.png")}
+                />
+
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    marginLeft: 40,
+                    fontSize: 16,
+                    color: colors.white,
+                    textAlign: "center",
+                    marginRight: 10,
+                  }}
+                >
+                  Continue with Google
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            marginTop: 40,
+            marginBottom: 20,
+          }}
+        >
+          <Text style={{ color: colors.lightgrey, fontWeight: "bold" }}>
+            Already have an account ?
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <Text style={{ color: colors.Vivid_red, fontWeight: "bold" }}>
+              Sign in
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
 export default Registerscreen;
+
+const styles = StyleSheet.create({
+  img__container: {
+    alignItems: "center",
+    marginTop: 26.5,
+  },
+  uploadBtnContainer: {
+    position: "absolute",
+    top: 78,
+    left: "59%",
+  },
+});

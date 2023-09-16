@@ -6,16 +6,26 @@ import "firebase/database";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+import {
+  EXPO_PUBLIC_API_KEY,
+  EXPO_PUBLIC_AUTH_DOMAIN,
+  EXPO_PUBLIC_DATABASE_URL,
+  EXPO_PUBLIC_PROJECT_ID,
+  EXPO_PUBLIC_STORAGE_BUCKET,
+  EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  EXPO_PUBLIC_APP_ID,
+  EXPO_PUBLIC_MEASUREMENT_ID,
+} from "@env";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCazchLM-3tm19_7SjyYC3HC2oR0BZLS4Q",
-  authDomain: "mesaage-c153d.firebaseapp.com",
-  databaseURL:
-    "https://mesaage-c153d-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "mesaage-c153d",
-  storageBucket: "mesaage-c153d.appspot.com",
-  messagingSenderId: "24668159825",
-  appId: "1:24668159825:web:8bcfa32cd7f364e625dd70",
-  measurementId: "G-DW6LD8SQ2C",
+  apiKey: EXPO_PUBLIC_API_KEY,
+  authDomain: EXPO_PUBLIC_AUTH_DOMAIN,
+  databaseURL: EXPO_PUBLIC_DATABASE_URL,
+  projectId: EXPO_PUBLIC_PROJECT_ID,
+  storageBucket: EXPO_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  appId: EXPO_PUBLIC_APP_ID,
+  measurementId: EXPO_PUBLIC_MEASUREMENT_ID,
 };
 
 let app;

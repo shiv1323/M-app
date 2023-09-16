@@ -41,6 +41,8 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
+.eas.json
+
 # Android/IntelliJ
 #
 build/
